@@ -10,13 +10,20 @@
         v-if="siderMenu.length"
     >
         <template v-for="item in siderMenu">
-            <a-menu-item :key="item.path" v-if="!item.children.length">
+            <a-menu-item
+                :key="item.path"
+                v-if="!item.children.length && item.type !== 3"
+            >
                 <router-link :to="{ name: item.path }">
                     <a-icon type="user" />
                     <span>{{ item.label }}</span>
                 </router-link>
             </a-menu-item>
-            <sub-menu v-else :menu-info="item" :key="item.path"></sub-menu>
+            <sub-menu
+                v-else-if="item.children.length"
+                :menu-info="item"
+                :key="item.path"
+            ></sub-menu>
         </template>
     </a-menu>
 </template>
