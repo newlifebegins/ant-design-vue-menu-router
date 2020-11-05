@@ -1,72 +1,97 @@
 import axios from "axios";
-import store from "@/store";
-import storage from "store";
-import notification from "ant-design-vue/es/notification";
-import { VueAxios } from "./axios";
-import { ACCESS_TOKEN } from "@/store/mutation-types";
-
-// 创建 axios 实例
-const request = axios.create({
-    // API 请求的默认前缀
-    //   baseURL: process.env.VUE_APP_API_BASE_URL,
-    timeout: 6000, // 请求超时时间
+import { notification } from "ant-design-vue";
+const MOCKURL = ""; // mock数据地址
+/**
+ * 自定义Axios实例
+ */
+// axios.defaults.baseURL = sessionStorage.getItem('SYS_URL');
+const AJAX = axios.create({
+    timeout: 30000,
+    withCredentials: true,
 });
 
-// 异常拦截处理器
-const errorHandler = (error) => {
-    if (error.response) {
-        const data = error.response.data;
-        // 从 localstorage 获取 token
-        const token = storage.get(ACCESS_TOKEN);
-        if (error.response.status === 403) {
-            notification.error({
-                message: "Forbidden",
-                description: data.message,
-            });
-        }
-        if (
-            error.response.status === 401 &&
-            !(data.result && data.result.isLogin)
-        ) {
-            notification.error({
-                message: "Unauthorized",
-                description: "Authorization verification failed",
-            });
-            if (token) {
-                store.dispatch("Logout").then(() => {
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                });
-            }
-        }
+// 添加请求拦截器
+AJAX.interceptors.request.use(
+    function(config) {
+        // 在发送请求之前做些什么
+        // if (process.env.NODE_ENV === 'development') {
+        //     config.url = `http://${location.host}` + config.url; // 自定义反向代理
+        // }
+        // config.baseURL = sessionStorage.getItem('SYS_URL');
+        return config;
+    },
+    function(error) {
+        // 对请求错误做些什么
+        return Promise.reject(error);
     }
-    return Promise.reject(error);
-};
+);
 
-// request interceptor
-request.interceptors.request.use((config) => {
-    const token = storage.get(ACCESS_TOKEN);
-    // 如果 token 存在
-    // 让每个请求携带自定义 token 请根据实际情况自行修改
-    if (token) {
-        config.headers["Access-Token"] = token;
+// 添加响应拦截器
+AJAX.interceptors.response.use(
+    function(response) {
+        // 对响应数据做点什么
+        return response.data;
+    },
+    function(error) {
+        // 对响应错误做点什么，比如400、401、402等等
+        // if (error && error.response) {
+        //     // console.log(error.response);
+        //     const {
+        //         response: { status, statusText },
+        //     } = error;
+        //     notification.error({
+        //         message: h => {
+        //             return h('div', {}, [
+        //                 '请求错误',
+        //                 h('span', { style: { color: '#ff0000', marginLeft: '5px' } }, [status]),
+        //             ]);
+        //         },
+        //         description: statusText,
+        //     });
+        // }
+        return Promise.reject(error);
     }
-    return config;
-}, errorHandler);
+);
 
-// response interceptor
-request.interceptors.response.use((response) => {
-    return response.data;
-}, errorHandler);
-
-const installer = {
-    vm: {},
-    install(Vue) {
-        Vue.use(VueAxios, request);
+// 定义对外Get、Post、File请求
+export default {
+    get(url, param = {}, headers = {}) {
+        return AJAX.get(url, {
+            params: param,
+            headers: {
+                ...headers,
+            },
+        });
+    },
+    post(url, param = null, headers = {}) {
+        return AJAX.post(url, param, {
+            headers,
+        });
+    },
+    put(url, param = null, headers = {}) {
+        return AJAX.put(url, param, {
+            headers,
+        });
+    },
+    file(url, param = null, headers = {}) {
+        return AJAX.post(url, param, {
+            headers: Object.assign(
+                {
+                    "Content-Type": "multipart/form-data",
+                },
+                headers
+            ),
+        });
+    },
+    delete(url, param = null, headers = {}) {
+        return AJAX.delete(url, {
+            params: param,
+            headers: Object.assign(
+                {
+                    "Content-Type": "multipart/form-data",
+                },
+                headers
+            ),
+        });
     },
 };
-
-export default request;
-
-export { installer as VueAxios, request as axios };

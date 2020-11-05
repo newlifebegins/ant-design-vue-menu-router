@@ -1,6 +1,6 @@
 import storage from "store";
-import { login, getCurrentUserNav } from "@/api/login";
-import { JWT, MENUS } from "@/store/mutation-types";
+import { login, getMenu } from "@/api/user";
+import { JWT, MENUS, USERINFO } from "@/store/mutation-types";
 
 const user = {
     namespaced: true,
@@ -29,6 +29,23 @@ const user = {
                     .then((response) => {
                         const result = response.data;
                         storage.set(JWT, result.jwt, 7 * 24 * 60 * 60 * 1000);
+                        localStorage.setItem(
+                            JWT,
+                            result.jwt,
+                            7 * 24 * 60 * 60 * 1000
+                        );
+                        let { consumer } = result;
+                        let USERINFOS = {
+                            boundary: consumer.boundary,
+                            center: [consumer.lng, consumer.lat],
+                            zoom: consumer.zoom,
+                            name: consumer.name,
+                        };
+                        localStorage.setItem(
+                            USERINFO,
+                            JSON.stringify(USERINFOS),
+                            7 * 24 * 60 * 60 * 1000
+                        );
                         commit("SET_JWT", result.jwt);
 
                         resolve(result.jwt);
@@ -42,7 +59,7 @@ const user = {
         // 获取用户信息
         GetMenu({ commit }, params) {
             return new Promise((resolve, reject) => {
-                getCurrentUserNav(params)
+                getMenu(params)
                     .then((response) => {
                         console.log(response.data);
                         storage.set(MENUS, response.data);
